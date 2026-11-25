@@ -180,7 +180,6 @@ public enum LaunchAtLoginManager {
     }
 
     public static func setEnabled(_ enabled: Bool) throws {
-        let uid = getuid()
         if enabled {
             let launchAgentsDir = plistURL.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: launchAgentsDir, withIntermediateDirectories: true)
@@ -195,13 +194,8 @@ public enum LaunchAtLoginManager {
             ]
             let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
             try data.write(to: plistURL, options: .atomic)
-
-            _ = CommandRunner.run("/bin/launchctl", ["bootout", "gui/\(uid)", plistURL.path])
-            let boot = CommandRunner.run("/bin/launchctl", ["bootstrap", "gui/\(uid)", plistURL.path])
-            if boot.exitCode != 0 && !boot.stderr.lowercased().contains("already") {
-                throw NetworkManagerError.launchAgentFailed(boot.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
-            }
         } else {
+            let uid = getuid()
             _ = CommandRunner.run("/bin/launchctl", ["bootout", "gui/\(uid)", plistURL.path])
             if FileManager.default.fileExists(atPath: plistURL.path) {
                 try FileManager.default.removeItem(at: plistURL)

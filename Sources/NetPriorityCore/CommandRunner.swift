@@ -64,6 +64,8 @@ public enum CommandRunner {
             || lower.contains("not allowed")
             || lower.contains("root")
             || lower.contains("sudo")
+            || lower.contains("admin")
+            || lower.contains("commit")
             || lower.contains("error: -")
 
         if needsPrivilege {

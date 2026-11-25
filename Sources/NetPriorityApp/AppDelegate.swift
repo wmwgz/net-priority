@@ -9,9 +9,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var mainWindow: NSWindow!
     private var statusItem: NSStatusItem!
     private var cancellables = Set<AnyCancellable>()
+    private var showWindowObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.gao.netpriority"
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        let existingInstances = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0.processIdentifier != currentPID }
+        let launchedInBackground = CommandLine.arguments.contains("--background")
+
+        if !existingInstances.isEmpty {
+            if !launchedInBackground {
+                DistributedNotificationCenter.default().postNotificationName(
+                    Notification.Name("com.gao.netpriority.showMainWindow"),
+                    object: nil,
+                    userInfo: nil,
+                    deliverImmediately: true
+                )
+            }
+            NSApp.terminate(nil)
+            return
+        }
+
         NSApp.setActivationPolicy(.regular)
+
+        showWindowObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("com.gao.netpriority.showMainWindow"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.showMainWindow()
+            }
+        }
 
         viewModel = AppViewModel()
 
@@ -31,13 +61,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         mainWindow = window
 
+        setupMainMenu()
         setupStatusBar()
         bindStatusUpdates()
 
-        let launchedInBackground = CommandLine.arguments.contains("--background")
         if !launchedInBackground {
             showMainWindow()
         }
+    }
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "隐藏网卡优先级管理", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "退出 NetPriority", action: #selector(handleQuit), keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        let editMenuItem = NSMenuItem()
+        let editMenu = NSMenu(title: "编辑")
+        editMenu.addItem(withTitle: "撤销", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "重做", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "剪切", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "拷贝", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "粘贴", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "全选", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editMenuItem.submenu = editMenu
+        mainMenu.addItem(editMenuItem)
+
+        let windowMenuItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "窗口")
+        windowMenu.addItem(withTitle: "打开主窗口", action: #selector(handleOpenWindow), keyEquivalent: "o")
+        windowMenu.addItem(withTitle: "刷新状态", action: #selector(handleRefresh), keyEquivalent: "r")
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(withTitle: "关闭窗口", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenu.addItem(withTitle: "最小化", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+
+        NSApp.mainMenu = mainMenu
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

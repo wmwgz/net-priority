@@ -231,6 +231,10 @@ final class AppViewModel: ObservableObject {
                 try? await Task.sleep(nanoseconds: 250_000_000)
                 await refresh()
                 showStatus(successMessage)
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 1_200_000_000)
+                    await self?.refresh()
+                }
             } catch {
                 showError(error.localizedDescription)
                 await refresh()
