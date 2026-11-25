@@ -1,15 +1,16 @@
-# NetPriority
+# NetPriority — macOS Wi-Fi & Ethernet Priority Switcher
 
-English | [简体中文](README_CN.md)
+English | [简体中文](README_CN.md) | [日本語](README_JA.md)
 
 [![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-007AFF?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white)](https://swift.org)
+[![CI](https://github.com/wmwgz/net-priority/actions/workflows/ci.yml/badge.svg)](https://github.com/wmwgz/net-priority/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/wmwgz/net-priority?color=2EA44F)](https://github.com/wmwgz/net-priority/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A lightweight, native macOS **SwiftUI + AppKit** utility to manage macOS network service priority (Wi-Fi vs. multiple wired / USB Ethernet / mobile tethering interfaces), configure **Intranet-Only (no default gateway)** adapters in one click, and monitor your active default internet route live from both a clean window and the menu bar.
+A lightweight, native macOS **SwiftUI + AppKit** menu bar utility & GUI for `networksetup -ordernetworkservices`: switch **macOS network service order** (**prefer Ethernet over Wi-Fi** or vice versa) in one click, pick among **multiple USB Ethernet / dock / LTE modem / iPhone USB** adapters, configure **Intranet-Only (no default gateway)** routing for simultaneous wired + local Wi-Fi use, and monitor your active default internet route live on **Apple Silicon & Intel (Universal Binary)** Macs.
 
-![NetPriority Main Window](docs/screenshots/main-en.png)
+![NetPriority macOS network service order and Wi-Fi Ethernet priority switcher main window](docs/screenshots/main-en.png)
 
 ---
 
@@ -96,6 +97,25 @@ cd net-priority
 ./scripts/build_app.sh
 open /Applications/NetPriority.app
 ```
+
+---
+
+## FAQ
+
+**How do I prefer Ethernet over Wi-Fi on macOS without opening System Settings?**  
+Click **`Prefer Wired`** (or **`Prefer Wi-Fi`**) in NetPriority's window or Menu Bar dropdown. NetPriority immediately updates the macOS Network Service Order via `networksetup` and verifies your active default route (`en5` / `en0`).
+
+**Can I switch between multiple wired, USB Ethernet, dock, or mobile tethering interfaces?**  
+Yes. Unlike simple two-way Wi-Fi/Ethernet scripts, NetPriority lets you click the split dropdown arrow (`▾`) next to **`Prefer Wired`** to promote any specific USB-C dock, Gigabit dongle, 4G/LTE USB modem, or iPhone USB adapter to `#1`.
+
+**How do I keep Ethernet for internet while using Wi-Fi or USB for local intranet (`192.168.x.x`)?**  
+Click **`Intranet Only`** on the secondary adapter (works on both wired/USB adapters and `Wi-Fi`). NetPriority assigns a static IPv4 without a router gateway and turns IPv6 off, so local admin portals (`192.168.0.1`, `192.168.4.1`, etc.) stay reachable without hijacking your default internet gateway.
+
+**How is this different from running `networksetup -ordernetworkservices` manually?**  
+Manually calling `networksetup -ordernetworkservices` easily drops or misorders hidden services (`J-Link`, `USB JTAG`, serial debuggers, or VPN interfaces). NetPriority automatically preserves all hidden entries in place while letting you drag-and-drop visible adapters safely.
+
+**Does NetPriority run natively on both Apple Silicon (M1–M4) and Intel Macs?**  
+Yes. Each GitHub Release includes a Universal Binary (`NetPriority-v*-macos-universal.zip`) alongside architecture-specific `arm64` and `x86_64` builds for macOS 14.0+.
 
 ---
 

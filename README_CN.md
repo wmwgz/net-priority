@@ -1,15 +1,16 @@
-# NetPriority（macOS 网卡优先级管理）
+# NetPriority — macOS 网卡优先级与有线 / Wi-Fi 一键切换工具
 
-[English](README.md) | 简体中文
+[English](README.md) | 简体中文 | [日本語](README_JA.md)
 
 [![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-007AFF?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white)](https://swift.org)
+[![CI](https://github.com/wmwgz/net-priority/actions/workflows/ci.yml/badge.svg)](https://github.com/wmwgz/net-priority/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/wmwgz/net-priority?color=2EA44F)](https://github.com/wmwgz/net-priority/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-原生轻量 macOS（**SwiftUI + AppKit**）工具，用于在 **Wi-Fi 与多款不同有线 / USB 网卡**之间一键切换默认上网优先级，支持一键把指定网卡设为「**仅内网管理（无默认网关）**」，并在主窗口和顶部菜单栏实时显示当前默认上网出口。
+原生轻量 macOS（**SwiftUI + AppKit**）菜单栏网卡优先级管理工具：替代繁琐的 **macOS 设定服务顺序**，一键设置 **优先有线 / 优先 Wi-Fi**，支持在**多款扩展坞 / USB 千兆网卡 / 随身 WiFi / 手机 USB 共享**之间精准切换；同时支持一键开启「**仅内网管理（无默认网关）**」让**有线和 Wi-Fi 同时连接不冲突**，提供 **Apple Silicon 与 Intel 通用版**，并在主窗口和顶部菜单栏实时显示当前默认上网出口。
 
-![NetPriority 主界面截图](docs/screenshots/main-zh.png)
+![NetPriority macOS 网卡优先级与有线 Wi-Fi 切换工具主界面](docs/screenshots/main-zh.png)
 
 ---
 
@@ -94,6 +95,25 @@ cd net-priority
 ./scripts/build_app.sh
 open /Applications/NetPriority.app
 ```
+
+---
+
+## 常见问题 (FAQ)
+
+**如何不用每次打开系统设置就一键优先有线或优先 Wi-Fi？**  
+直接在 NetPriority 主窗口或顶部菜单栏点击 **`优先有线`** / **`优先 Wi-Fi`** 即可，软件会立即调整 macOS 的网络服务顺序，并实时反馈当前实际生效的默认网关出口（如 `en5` / `en0`）。
+
+**怎么实现“网线走外网，同时 Wi-Fi 或随身 WiFi 连内网管理页（`192.168.x.x`）不抢网”？**  
+在需要仅访问内网的那张网卡（支持**所有有线/USB 网卡及 Wi-Fi**）点击 **`仅内网`**，软件会自动设置无网关的静态 IPv4 并关闭 IPv6，内网后台（如 `192.168.0.1`、`192.168.4.1`）照常访问，外网流量 100% 走主网卡；需要恢复时点 **`允许上网`** 即可恢复 DHCP。
+
+**同时插着扩展坞网口、USB 网卡、随身 WiFi 等多台有线设备怎么区分？**  
+普通脚本只能“Wi-Fi / 有线二选一”，NetPriority 支持点开 **`优先有线 ▾`** 下拉菜单精准指定某一张有线或 USB 设备排到第一位，还能用 **`✎`** 给序列号起中文备注名（如“随身WiFi”、“工位千兆网”）。
+
+**这和自己在终端执行 `networksetup -ordernetworkservices` 有什么区别？**  
+手写脚本重排服务顺序很容易把系统里隐藏的串口调试器（`J-Link`、`USB JTAG`）或 VPN 服务（如 `Tailscale`）漏掉甚至覆盖。NetPriority 在界面默认过滤杂项的同时，底层重排时会自动把所有隐藏服务按原顺位完整保留并传回系统。
+
+**支持 Intel Mac 和 Apple Silicon（M1–M4）吗？**  
+原生支持。GitHub Releases 提供合二为一的通用安装包（`NetPriority-v*-macos-universal.zip`）以及独立的 `arm64` / `x86_64` 包，适用 macOS 14.0 及以上系统。
 
 ---
 
