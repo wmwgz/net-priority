@@ -62,6 +62,12 @@ open /Applications/NetPriority.app
 - **完全ローカル動作・テレメトリなし**：外部通信は一切行わず、カスタム別名や UI 設定のみローカルの `UserDefaults` に保存します。
 - `/usr/sbin/networksetup`、`/sbin/ifconfig`、`/sbin/route` および `SystemConfiguration`（`SCDynamicStore`）イベント監視により低負荷・リアルタイムに動作します。
 
+## コミュニティ・謝辞
+
+[![LINUX DO](https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square)](https://linux.do)
+
+オープンソースの推進とコミュニティでの議論・フィードバックに協力いただいている [LINUX DO](https://linux.do) コミュニティに感謝します。
+
 ## ライセンス
 
 [MIT License](LICENSE) の下で公開されています。

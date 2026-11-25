@@ -136,6 +136,12 @@ Yes. Each GitHub Release includes a Universal Binary (`NetPriority-v*-macos-univ
 1. Uncheck **Launch at Login** inside the app (or remove `~/Library/LaunchAgents/io.github.wmwgz.netpriority.plist`).
 2. Quit **NetPriority** from the menu bar (`⌘Q`) and move `/Applications/NetPriority.app` to Trash.
 
+## Community & Acknowledgments
+
+[![LINUX DO](https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square)](https://linux.do)
+
+Special thanks to the [LINUX DO](https://linux.do) community for open-source support, feedback, and discussions.
+
 ## License
 
 Released under the [MIT License](LICENSE).

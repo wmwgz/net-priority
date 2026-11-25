@@ -134,6 +134,12 @@ open /Applications/NetPriority.app
 1. 如开启过「开机自启」，先在软件里取消勾选（或删除 `~/Library/LaunchAgents/io.github.wmwgz.netpriority.plist`）。
 2. 在菜单栏退出 `NetPriority`（`⌘Q`），然后把 `/Applications/NetPriority.app` 移到废纸篓即可。
 
+## 社区与致谢
+
+[![LINUX DO](https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square)](https://linux.do)
+
+感谢 [LINUX DO](https://linux.do) 社区提供的交流氛围与开源推广支持。
+
 ## 开源协议
 
 基于 [MIT License](LICENSE) 开源。
