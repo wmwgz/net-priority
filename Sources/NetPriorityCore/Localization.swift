@@ -158,9 +158,9 @@ public enum L10n {
 
     public static func dragHint(_ l: ResolvedLanguage) -> String {
         t(l,
-          zh: "拖拽网卡行或点击「设为优先」即可实时生效（第 1 位顺位最高）",
-          en: "Drag rows or click \"Set Priority\" to apply immediately (#1 is highest)",
-          ja: "行をドラッグまたは「優先にする」で即時反映（#1 が最優先）")
+          zh: "拖拽网卡行或点击「设为优先」即可实时生效（#1 最高）",
+          en: "Drag rows or click Set Priority (#1 is highest)",
+          ja: "ドラッグまたは「優先にする」で即時反映（#1 が最優先）")
     }
 
     public static func showHiddenToggle(count: Int, _ l: ResolvedLanguage) -> String {

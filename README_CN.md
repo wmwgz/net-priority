@@ -2,49 +2,111 @@
 
 [English](README.md) | 简体中文
 
-原生轻量 macOS（SwiftUI + AppKit）工具，用于在 **Wi-Fi 与多款不同有线 / USB 网卡**之间一键切换默认上网优先级，支持一键把指定网卡设为「**仅内网管理（无网关）**」，并在顶部菜单栏实时显示当前默认出口。
+[![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-007AFF?logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Swift 5.9+](https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white)](https://swift.org)
+[![Release](https://img.shields.io/github/v/release/wmwgz/net-priority?color=2EA44F)](https://github.com/wmwgz/net-priority/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 核心亮点
+原生轻量 macOS（**SwiftUI + AppKit**）工具，用于在 **Wi-Fi 与多款不同有线 / USB 网卡**之间一键切换默认上网优先级，支持一键把指定网卡设为「**仅内网管理（无默认网关）**」，并在主窗口和顶部菜单栏实时显示当前默认上网出口。
 
-- **精准区分多款有线/USB 设备**：同时插着扩展坞千兆网卡、随身 WiFi USB 口、手机 USB 共享时，不再只能“Wi-Fi / 有线二选一”，可直接挑中任意设备设为 `#1`。
-- **一键「仅内网管理 / 允许上网」**：给需要调管理后台的网卡（有线或 Wi-Fi 均可）一键配成手动 IP、**不填默认网关并关闭 IPv6**（例如访问 `192.168.0.1` 管理页的同时完全不抢默认网）；点「允许上网」即可秒回 DHCP 自动模式。
-- **自动过滤串口与虚拟扩展**：默认隐藏 `J-Link`、`USB JTAG` 调试串口以及无设备节点的 VPN 虚拟项（需要时可随时勾选展开），拖拽重排顺位时自动完整保留隐藏项顺位不丢失。
-- **独立主窗口 + 菜单栏常驻**：通过 `SCDynamicStore` 实时监听热插拔与默认路由变化，关闭主窗口后自动驻留顶部菜单栏，点击即可秒切出口。
-- **多语言实时切换**：支持 **跟随系统 / 简体中文 / English / 日本語**，窗口工具栏和顶部菜单栏均支持免重启即时切换。
+![NetPriority 主界面截图](docs/screenshots/main-zh.png)
 
-## 主要功能
+---
 
-- 顶部卡片实时显示当前默认上网出口、IPv4、默认网关、IPv6 与链路速率
-- 一键 `优先 Wi-Fi`、`优先有线`（分体下拉可指定具体有线设备）
-- 列表拖拽排序 + `↑ / ↓` 微调 + 单网卡启用/禁用开关
-- 单网卡 `仅内网` / `允许上网`（支持右键自定义静态内网 IP 与掩码）
-- 自定义设备中文备注别名（如将随身 WiFi 序列号备注为「随身WiFi」）
-- 单实例防多开保护、标准 macOS 快捷键与 `LaunchAgent` 开机静默自启
+## 为什么做 NetPriority？
 
-## 环境要求
+macOS 决定电脑从哪张网卡上网，靠的是 **系统设置 → 网络 → 设定服务顺序…** 里的排名。每次插拔扩展坞、在 Wi-Fi 和千兆网线间切换、或者插上随身 WiFi / 嵌入式设备调试时，手动去系统设置里拖来拖去非常繁琐；而市面上现有的小脚本大多只支持“Wi-Fi / 有线二选一”，面对**同时插着多款有线/USB 设备**的场景根本不够用。
 
-- macOS 14.0+
-- Swift 5.9+（Xcode 或 Command Line Tools 均可）
+**NetPriority** 专门解决这些实际痛点：
 
-## 编译与安装
+| 功能特性 | NetPriority | 同类小脚本/开关 | macOS 系统设置 |
+| :--- | :---: | :---: | :---: |
+| 一键切换 **优先 Wi-Fi / 优先有线** | ✅ | ✅ | ❌ |
+| 区分并指定 **多款不同有线 / USB 设备** | ✅ | ❌ | 需手动拖拽 |
+| 一键 **「仅内网管理（无网关 + 关 IPv6）」** | ✅ | ❌ | 需多步手填 |
+| 拖拽完整排序（自动保留隐藏项顺位） | ✅ | ❌ | 弹窗层级深 |
+| 自动过滤 `J-Link` / `USB JTAG` 串口与 VPN | ✅ | ❌ | 列表杂乱 |
+| 自定义中文备注别名（如「随身WiFi」） | ✅ | ❌ | ❌ |
+| 顶部菜单栏实时出口状态 + 秒切菜单 | ✅ | 部分支持 | ❌ |
+| 四语言免重启热切换（中 / 英 / 日 / 跟随系统） | ✅ | 极少 | 需重启或切系统 |
+
+---
+
+## 详细使用说明
+
+### 1. 一键切换优先级（`优先 Wi-Fi` / `优先有线`）
+- 顶部信息卡片实时展示**当前默认上网出口**（设备名称、BSD 接口如 `en5`/`en0`、IPv4、默认网关、IPv6 接口与物理速率）。
+- **当前实际生效的模式按钮会亮蓝高亮**，不会看错状态。
+- 点 **`优先 Wi-Fi`**：立即把 Wi-Fi 提到 `#1`。
+- 点 **`优先有线`**：一键把主用有线网卡提到 `#1`；点击按钮右侧 **`▾` 下拉箭头**，可以在**多款有线/USB 设备之间精准点选**某一台（例如区分扩展坞千兆网口、随身 WiFi、手机 USB 共享）。
+- 也可以在列表中任意一行直接点 **`设为优先`**。
+
+### 2. 拖拽排序与单网卡启用 / 禁用
+- 直接**鼠标拖拽任意网卡行**（或点击行内 **`↑ / ↓`**）即可调整完整优先级顺序。
+- 修改顺序时，底层会自动将隐藏的串口/VPN 服务按原相对位置合并传给 `networksetup -ordernetworkservices`，**绝不丢失或打乱系统隐藏项**。
+- 每行最右侧的拨动开关可一键**启用或禁用**该网络服务。
+
+### 3. 一键「仅内网管理 / 允许上网」
+非常适合“主力网卡正常上网，同时副网卡连设备后台”的场景：
+- **场景 A（插千兆网线上网 + USB 接随身 WiFi / 路由器）**：点随身 WiFi 那一行的 **`仅内网`**，软件会自动把它设为手动 IP（默认沿用当前 IP，若无则弹窗默认 `192.168.0.100 / 255.255.255.0`）、**不设默认网关并关闭 IPv6**。电脑既能顺畅访问 `192.168.0.1` 管理页，又**完全不会抢默认上网路线**。
+- **场景 B（插有线网线上网 + Wi-Fi 连单片机/开发板热点）**：**`Wi-Fi` 行同样支持 `仅内网`**，连硬件热点调试时不会断掉有线网。
+- 点 **`允许上网`**：一键恢复 DHCP 与 IPv6 自动获取。
+- **右键**点击 `仅内网` 按钮可随时自定义手动 IP 与子网掩码。
+
+### 4. 自动过滤杂项与中文备注
+- `J-Link`、`USB JTAG/serial debug unit`、`usbmodem*` 调试串口以及无实际设备节点的 VPN 虚拟项（如 `Tailscale`）默认自动隐藏，勾选顶部 **`显示串口/VPN`** 可随时查看全部条目。
+- 点击任意行的小铅笔图标 **`✎`**，可以起直观的备注名（如把序列号 `200806006809080000` 备注为 **`随身WiFi`**），本地持久化保存。
+
+### 5. 菜单栏常驻与开机自启
+- 关闭主窗口不会退出程序，而是缩回**顶部菜单栏**实时显示当前上网出口图标和名称，点开即可一键切网、开主窗口、切换语言或刷新。
+- 勾选 **`开机自启`** 会生成 `~/Library/LaunchAgents/io.github.wmwgz.netpriority.plist`（附带 `--background` 参数，开机后静默驻留菜单栏不弹窗打扰）。
+- 内置**单实例防多开保护**：重复双击应用会自动唤醒现有窗口，不会启动多个副本。
+
+### 6. 多语言实时切换
+- 支持 **跟随系统 / 简体中文 / English / 日本語**。
+- 可在主窗口工具栏 **🌐 语言下拉** 或顶部菜单栏 **`语言 / Language`** 中随时切换，界面立即全局更新，无需重启。
+
+---
+
+## 下载与安装
+
+### 方式一：直接下载 Release 安装包（推荐）
+1. 前往 [**GitHub Releases**](https://github.com/wmwgz/net-priority/releases) 下载最新的 `NetPriority-v*-macos-*.zip`。
+2. *(可选)* 校验压缩包 SHA-256：
+   ```bash
+   shasum -a 256 -c NetPriority-v1.0.0-macos-arm64.zip.sha256
+   ```
+3. 解压后将 `NetPriority.app` 拖入 `/Applications`（应用程序）文件夹。
+4. **首次打开提示（未公证说明）**：由于个人开源版未购买 Apple 开发者公证签名，首次双击可能会被 macOS Gatekeeper 拦截，在终端执行一次以下命令移除隔离属性即可正常打开：
+   ```bash
+   xattr -cr /Applications/NetPriority.app
+   ```
+
+### 方式二：从源码编译安装
+环境要求：**macOS 14.0+**、**Swift 5.9+**（Xcode 或 Apple Command Line Tools 均可）：
 
 ```bash
-git clone https://github.com/<your-username>/net-priority.git
+git clone https://github.com/wmwgz/net-priority.git
 cd net-priority
-swift run NetPrioritySelfTest
 ./scripts/build_app.sh
+open /Applications/NetPriority.app
 ```
 
-脚本会自动运行全部单元测试、编译 Release 版本、生成图标、签名并安装到 `/Applications/NetPriority.app`。
+---
 
-### 首次打开提示说明（未公证版本）
+## 隐私、权限与原理说明
 
-如果从 Release 下载未经过 Apple 开发者公证的压缩包时被系统拦截，可先执行以下命令移除隔离属性后再打开：
+- **完全本地运行、零联网遥测**：软件自身不发起任何网络请求，仅在本地 `UserDefaults` 中保存你的备注名、手动内网 IP 记忆和界面偏好。
+- **底层实现**：
+  - 通过 `/usr/sbin/networksetup`、`/sbin/ifconfig`、`/sbin/route` 读取服务顺序、网卡状态与默认路由；
+  - 通过 macOS 原生 `SystemConfiguration`（`SCDynamicStore`）事件通知监听热插拔与路由变更，无轮询开销；
+  - 优先直接调用 `networksetup` 修改配置，仅当系统策略要求提权时才弹窗请求原生管理员授权。
 
-```bash
-xattr -cr /Applications/NetPriority.app
-```
+## 卸载方式
+
+1. 如开启过「开机自启」，先在软件里取消勾选（或删除 `~/Library/LaunchAgents/io.github.wmwgz.netpriority.plist`）。
+2. 在菜单栏退出 `NetPriority`（`⌘Q`），然后把 `/Applications/NetPriority.app` 移到废纸篓即可。
 
 ## 开源协议
 
-基于 [MIT](LICENSE) 协议开源。
+基于 [MIT License](LICENSE) 开源。

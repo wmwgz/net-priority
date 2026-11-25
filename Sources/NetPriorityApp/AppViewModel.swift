@@ -47,6 +47,154 @@ final class AppViewModel: ObservableObject {
         Task { await refresh() }
     }
 
+    private init(previewServices: [NetworkServiceItem], routeInfo: RouteInfo, language: AppLanguage) {
+        self.appLanguage = language
+        L10n.appLanguage = language
+        self.showHiddenServices = false
+        self.launchAtLogin = true
+        self.services = previewServices
+        self.routeInfo = routeInfo
+        self.lastUpdated = Date()
+    }
+
+    static func previewSample(language: AppLanguage) -> AppViewModel {
+        let l = language.resolve()
+        let dockAlias = l == .zhHans ? "扩展坞千兆有线" : (l == .ja ? "ドック有線LAN" : "Dock Gigabit LAN")
+        let pocketAlias = l == .zhHans ? "随身WiFi" : (l == .ja ? "ポケットWiFi" : "Pocket WiFi")
+        let duplex = L10n.fullDuplex(l)
+
+        let items = [
+            NetworkServiceItem(
+                orderIndex: 0,
+                serviceName: "USB 10/100/1000 LAN",
+                hardwarePort: "USB 10/100/1000 LAN",
+                device: "en5",
+                isEnabled: true,
+                kind: .wired,
+                linkStatus: .active,
+                liveIPv4: "192.168.1.108",
+                mediaSummary: "1000M \(duplex)",
+                config: ServiceConfigInfo(configType: "DHCP Configuration", ipAddress: "192.168.1.108", subnetMask: "255.255.255.0", router: "192.168.1.1", ipv6Mode: "Automatic"),
+                isDefaultIPv4Route: true,
+                isDefaultIPv6Route: true,
+                alias: dockAlias
+            ),
+            NetworkServiceItem(
+                orderIndex: 1,
+                serviceName: "Wi-Fi",
+                hardwarePort: "Wi-Fi",
+                device: "en0",
+                isEnabled: true,
+                kind: .wifi,
+                linkStatus: .active,
+                liveIPv4: "192.168.1.112",
+                mediaSummary: "",
+                config: ServiceConfigInfo(configType: "DHCP Configuration", ipAddress: "192.168.1.112", subnetMask: "255.255.255.0", router: "192.168.1.1", ipv6Mode: "Automatic"),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: nil
+            ),
+            NetworkServiceItem(
+                orderIndex: 2,
+                serviceName: "USB LTE Modem",
+                hardwarePort: "USB LTE Modem",
+                device: "en9",
+                isEnabled: true,
+                kind: .wired,
+                linkStatus: .active,
+                liveIPv4: "192.168.0.100",
+                mediaSummary: "100M \(duplex)",
+                config: ServiceConfigInfo(configType: "Manual Configuration", ipAddress: "192.168.0.100", subnetMask: "255.255.255.0", router: "", ipv6Mode: "Off"),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: pocketAlias
+            ),
+            NetworkServiceItem(
+                orderIndex: 3,
+                serviceName: "iPhone USB",
+                hardwarePort: "iPhone USB",
+                device: "en6",
+                isEnabled: true,
+                kind: .usbModemOrPhone,
+                linkStatus: .unplugged,
+                liveIPv4: "",
+                mediaSummary: "",
+                config: ServiceConfigInfo(configType: "DHCP Configuration"),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: nil
+            ),
+            NetworkServiceItem(
+                orderIndex: 4,
+                serviceName: "Thunderbolt Bridge",
+                hardwarePort: "Thunderbolt Bridge",
+                device: "bridge0",
+                isEnabled: false,
+                kind: .bridge,
+                linkStatus: .disabled,
+                liveIPv4: "",
+                mediaSummary: "",
+                config: ServiceConfigInfo(configType: "DHCP Configuration"),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: nil
+            ),
+            NetworkServiceItem(
+                orderIndex: 5,
+                serviceName: "J-Link",
+                hardwarePort: "J-Link",
+                device: "usbmodem00077201",
+                isEnabled: true,
+                kind: .serialOrDebug,
+                linkStatus: .inactive,
+                liveIPv4: "",
+                mediaSummary: "",
+                config: ServiceConfigInfo(),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: nil
+            ),
+            NetworkServiceItem(
+                orderIndex: 6,
+                serviceName: "USB JTAG/serial debug unit",
+                hardwarePort: "USB JTAG/serial debug unit",
+                device: "usbmodem1101",
+                isEnabled: true,
+                kind: .serialOrDebug,
+                linkStatus: .inactive,
+                liveIPv4: "",
+                mediaSummary: "",
+                config: ServiceConfigInfo(),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: nil
+            ),
+            NetworkServiceItem(
+                orderIndex: 7,
+                serviceName: "Tailscale",
+                hardwarePort: "io.tailscale.ipn.macsys",
+                device: "",
+                isEnabled: true,
+                kind: .vpnOrVirtual,
+                linkStatus: .inactive,
+                liveIPv4: "",
+                mediaSummary: "",
+                config: ServiceConfigInfo(),
+                isDefaultIPv4Route: false,
+                isDefaultIPv6Route: false,
+                alias: nil
+            )
+        ]
+
+        let route = RouteInfo(
+            ipv4Interface: "en5",
+            ipv4Gateway: "192.168.1.1",
+            ipv6Interface: "en5",
+            ipv6Gateway: "fe80::1"
+        )
+        return AppViewModel(previewServices: items, routeInfo: route, language: language)
+    }
+
     var lang: ResolvedLanguage {
         appLanguage.resolve()
     }

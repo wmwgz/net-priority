@@ -118,63 +118,72 @@ struct MainView: View {
 
     @ViewBuilder
     private var wifiQuickSwitchButton: some View {
-        let btn = Button {
+        let active = viewModel.isWiFiPrimary
+        Button {
             viewModel.prioritizeWiFi()
         } label: {
             Label(L10n.prioritizeWiFi(l), systemImage: "wifi")
+                .font(.body.weight(.medium))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .foregroundStyle(active ? Color.white : Color.primary)
+                .background(
+                    active ? Color.accentColor : Color.secondary.opacity(0.14),
+                    in: Capsule(style: .continuous)
+                )
         }
-        .controlSize(.large)
+        .buttonStyle(.plain)
         .disabled(viewModel.isBusy || viewModel.wifiService == nil)
-
-        if viewModel.isWiFiPrimary {
-            btn.buttonStyle(.borderedProminent)
-        } else {
-            btn.buttonStyle(.bordered)
-        }
     }
 
     @ViewBuilder
     private var wiredQuickSwitchButton: some View {
         let candidates = viewModel.wiredCandidates
-        if candidates.count > 1 {
-            let menu = Menu {
-                ForEach(candidates) { dev in
-                    Button {
-                        viewModel.prioritizeWired(serviceName: dev.serviceName)
-                    } label: {
-                        let devName = dev.device.isEmpty ? L10n.noDeviceInterface(l) : dev.device
-                        Text("\(dev.displayName) (\(devName) · \(dev.linkStatus.localizedLabel(in: l)))")
-                    }
-                }
-            } label: {
-                Label(L10n.prioritizeWired(l), systemImage: "cable.connector")
-            } primaryAction: {
-                viewModel.prioritizeWired()
-            }
-            .controlSize(.large)
-            .disabled(viewModel.isBusy)
-            .help(L10n.wiredSplitHelp(l))
+        let active = viewModel.isWiredPrimary
 
-            if viewModel.isWiredPrimary {
-                menu.buttonStyle(.borderedProminent)
-            } else {
-                menu.buttonStyle(.bordered)
-            }
-        } else {
-            let btn = Button {
+        HStack(spacing: 0) {
+            Button {
                 viewModel.prioritizeWired()
             } label: {
                 Label(L10n.prioritizeWired(l), systemImage: "cable.connector")
+                    .font(.body.weight(.medium))
+                    .padding(.leading, 14)
+                    .padding(.trailing, candidates.count > 1 ? 10 : 14)
+                    .padding(.vertical, 7)
+                    .contentShape(Rectangle())
             }
-            .controlSize(.large)
+            .buttonStyle(.plain)
             .disabled(viewModel.isBusy || candidates.isEmpty)
 
-            if viewModel.isWiredPrimary {
-                btn.buttonStyle(.borderedProminent)
-            } else {
-                btn.buttonStyle(.bordered)
+            if candidates.count > 1 {
+                Rectangle()
+                    .fill(active ? Color.white.opacity(0.35) : Color.primary.opacity(0.15))
+                    .frame(width: 1, height: 16)
+
+                Menu {
+                    ForEach(candidates) { dev in
+                        Button {
+                            viewModel.prioritizeWired(serviceName: dev.serviceName)
+                        } label: {
+                            let devName = dev.device.isEmpty ? L10n.noDeviceInterface(l) : dev.device
+                            Text("\(dev.displayName) (\(devName) · \(dev.linkStatus.localizedLabel(in: l)))")
+                        }
+                    }
+                } label: {
+                    Text("")
+                }
+                .menuStyle(.borderlessButton)
+                .tint(active ? Color.white : Color.primary)
+                .frame(width: 28, height: 30)
+                .help(L10n.wiredSplitHelp(l))
+                .disabled(viewModel.isBusy)
             }
         }
+        .foregroundStyle(active ? Color.white : Color.primary)
+        .background(
+            active ? Color.accentColor : Color.secondary.opacity(0.14),
+            in: Capsule(style: .continuous)
+        )
     }
 
     private var heroExitColor: Color {

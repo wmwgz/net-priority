@@ -3,7 +3,7 @@ import SystemConfiguration
 
 public final class NetworkWatcher {
     private var store: SCDynamicStore?
-    private let queue = DispatchQueue(label: "com.gao.netpriority.watcher")
+    private let queue = DispatchQueue(label: "io.github.wmwgz.netpriority.watcher")
     private var debounceWorkItem: DispatchWorkItem?
     private let onChange: () -> Void
 
@@ -26,7 +26,7 @@ public final class NetworkWatcher {
             watcher.scheduleNotify()
         }
 
-        guard let created = SCDynamicStoreCreate(nil, "com.gao.netpriority.watcher" as CFString, callback, &context) else {
+        guard let created = SCDynamicStoreCreate(nil, "io.github.wmwgz.netpriority.watcher" as CFString, callback, &context) else {
             return
         }
         store = created

@@ -12,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var showWindowObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.gao.netpriority"
+        let bundleID = Bundle.main.bundleIdentifier ?? "io.github.wmwgz.netpriority"
         let currentPID = ProcessInfo.processInfo.processIdentifier
         let existingInstances = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
             .filter { $0.processIdentifier != currentPID }
@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if !existingInstances.isEmpty {
             if !launchedInBackground {
                 DistributedNotificationCenter.default().postNotificationName(
-                    Notification.Name("com.gao.netpriority.showMainWindow"),
+                    Notification.Name("io.github.wmwgz.netpriority.showMainWindow"),
                     object: nil,
                     userInfo: nil,
                     deliverImmediately: true
@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
 
         showWindowObserver = DistributedNotificationCenter.default().addObserver(
-            forName: Notification.Name("com.gao.netpriority.showMainWindow"),
+            forName: Notification.Name("io.github.wmwgz.netpriority.showMainWindow"),
             object: nil,
             queue: .main
         ) { [weak self] _ in

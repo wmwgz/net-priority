@@ -175,7 +175,7 @@ public enum NetworkManager {
 }
 
 public enum LaunchAtLoginManager {
-    public static let label = "com.gao.netpriority"
+    public static let label = "io.github.wmwgz.netpriority"
 
     public static var plistURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
