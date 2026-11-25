@@ -108,51 +108,68 @@ struct MainView: View {
             Spacer()
 
             HStack(spacing: 8) {
-                Button {
-                    viewModel.prioritizeWiFi()
-                } label: {
-                    Label("优先 Wi-Fi", systemImage: "wifi")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(viewModel.isBusy || viewModel.wifiService == nil)
-
+                wifiQuickSwitchButton
                 wiredQuickSwitchButton
             }
         }
     }
 
+    @ViewBuilder
+    private var wifiQuickSwitchButton: some View {
+        let btn = Button {
+            viewModel.prioritizeWiFi()
+        } label: {
+            Label("优先 Wi-Fi", systemImage: "wifi")
+        }
+        .controlSize(.large)
+        .disabled(viewModel.isBusy || viewModel.wifiService == nil)
+
+        if viewModel.isWiFiPrimary {
+            btn.buttonStyle(.borderedProminent)
+        } else {
+            btn.buttonStyle(.bordered)
+        }
+    }
+
+    @ViewBuilder
     private var wiredQuickSwitchButton: some View {
         let candidates = viewModel.wiredCandidates
-        return HStack(spacing: 1) {
-            Button {
+        if candidates.count > 1 {
+            let menu = Menu {
+                ForEach(candidates) { dev in
+                    Button {
+                        viewModel.prioritizeWired(serviceName: dev.serviceName)
+                    } label: {
+                        Text("\(dev.displayName)（\(dev.device.isEmpty ? "无接口" : dev.device) · \(dev.linkStatus.label)）")
+                    }
+                }
+            } label: {
+                Label("优先有线", systemImage: "cable.connector")
+            } primaryAction: {
+                viewModel.prioritizeWired()
+            }
+            .controlSize(.large)
+            .disabled(viewModel.isBusy)
+            .help("直接点击优先有线，点击右侧箭头可选择具体有线设备")
+
+            if viewModel.isWiredPrimary {
+                menu.buttonStyle(.borderedProminent)
+            } else {
+                menu.buttonStyle(.bordered)
+            }
+        } else {
+            let btn = Button {
                 viewModel.prioritizeWired()
             } label: {
                 Label("优先有线", systemImage: "cable.connector")
             }
-            .buttonStyle(.bordered)
             .controlSize(.large)
             .disabled(viewModel.isBusy || candidates.isEmpty)
 
-            if candidates.count > 1 {
-                Menu {
-                    ForEach(candidates) { dev in
-                        Button {
-                            viewModel.prioritizeWired(serviceName: dev.serviceName)
-                        } label: {
-                            HStack {
-                                Text(dev.displayName)
-                                Text("(\(dev.device.isEmpty ? "无接口" : dev.device) · \(dev.linkStatus.label))")
-                            }
-                        }
-                    }
-                } label: {
-                    Image(systemName: "chevron.down")
-                }
-                .menuStyle(.borderlessButton)
-                .frame(width: 24, height: 32)
-                .disabled(viewModel.isBusy)
-                .help("选择要设为最高优先级的具体有线设备")
+            if viewModel.isWiredPrimary {
+                btn.buttonStyle(.borderedProminent)
+            } else {
+                btn.buttonStyle(.bordered)
             }
         }
     }

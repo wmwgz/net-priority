@@ -177,7 +177,7 @@ public struct NetworkServiceItem: Identifiable, Equatable, Hashable {
     }
 
     public var supportsManagementOnly: Bool {
-        isNetworkAdapter && kind != .wifi
+        isNetworkAdapter
     }
 
     public var effectiveIPv4: String {

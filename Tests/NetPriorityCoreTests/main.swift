@@ -179,12 +179,38 @@ func testIPv4Validation() {
     checkTrue(!Parsers.isValidIPv4("abc.0.0.1"))
 }
 
+func testManagementOnlySupportForWiFiAndOthers() {
+    func makeItem(kind: ServiceKind, name: String, dev: String) -> NetworkServiceItem {
+        NetworkServiceItem(
+            orderIndex: 0,
+            serviceName: name,
+            hardwarePort: name,
+            device: dev,
+            isEnabled: true,
+            kind: kind,
+            linkStatus: .active,
+            liveIPv4: "",
+            mediaSummary: "",
+            config: ServiceConfigInfo(),
+            isDefaultIPv4Route: false,
+            isDefaultIPv6Route: false,
+            alias: nil
+        )
+    }
+
+    checkTrue(makeItem(kind: .wifi, name: "Wi-Fi", dev: "en0").supportsManagementOnly, "wifi supportsManagementOnly")
+    checkTrue(makeItem(kind: .wired, name: "USB 10/100/1000 LAN", dev: "en5").supportsManagementOnly, "wired supportsManagementOnly")
+    checkTrue(!makeItem(kind: .serialOrDebug, name: "J-Link", dev: "usbmodem1").supportsManagementOnly, "serial !supportsManagementOnly")
+    checkTrue(!makeItem(kind: .vpnOrVirtual, name: "Tailscale", dev: "").supportsManagementOnly, "vpn !supportsManagementOnly")
+}
+
 testParseRealServiceOrder()
 testClassificationAndFiltering()
 testParseServiceInfoVariants()
 testParseIfconfigAndRoute()
 testOrderMergingPreservesHiddenServices()
 testIPv4Validation()
+testManagementOnlySupportForWiFiAndOthers()
 
 if failureCount > 0 {
     fputs("Tests failed: \(failureCount) of \(assertionCount) assertions failed.\n", stderr)

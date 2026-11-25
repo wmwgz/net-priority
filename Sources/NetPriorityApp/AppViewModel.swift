@@ -74,6 +74,20 @@ final class AppViewModel: ObservableObject {
         return candidates.first(where: { $0.isEnabled }) ?? candidates.first
     }
 
+    var isWiFiPrimary: Bool {
+        if let exit = defaultExitService {
+            return exit.kind == .wifi
+        }
+        return visibleServices.first?.kind == .wifi
+    }
+
+    var isWiredPrimary: Bool {
+        if let exit = defaultExitService {
+            return exit.isWiredSwitchCandidate
+        }
+        return visibleServices.first?.isWiredSwitchCandidate == true
+    }
+
     func refresh() async {
         let aliases = PreferencesStore.shared.loadAliases()
         let includeHidden = showHiddenServices
