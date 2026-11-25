@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build and upload (e.g. v1.0.0). Leave empty for dry-run artifact build.'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -14,16 +20,47 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build, test, and package NetPriority
+
+      - name: Determine release version
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "${{ inputs.tag }}" ]]; then
+              echo "version=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+              echo "upload_release=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "version=v0.0.0-dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+              echo "upload_release=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "upload_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build, test, and package NetPriority (arm64, x86_64, universal)
         env:
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          PACKAGE_TARGETS: all
+          SKIP_INSTALL: '1'
         run: |
           chmod +x scripts/build_app.sh
           ./scripts/build_app.sh
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetPriority-${{ steps.meta.outputs.version }}-macos
+          path: |
+            dist/NetPriority-*.zip
+            dist/NetPriority-*.zip.sha256
+
       - name: Upload GitHub Release assets
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.meta.outputs.upload_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.meta.outputs.version }}
+          overwrite_files: true
           generate_release_notes: true
           files: |
             dist/NetPriority-*.zip

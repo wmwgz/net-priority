@@ -72,10 +72,13 @@ Ideal when you want to keep your main internet on one interface while accessing 
 ## Installation
 
 ### Option 1: Download Prebuilt Release (Recommended)
-1. Download the latest `NetPriority-v*-macos-*.zip` from [**GitHub Releases**](https://github.com/wmwgz/net-priority/releases).
+1. Download the build for your Mac from [**GitHub Releases**](https://github.com/wmwgz/net-priority/releases):
+   - `NetPriority-v*-macos-universal.zip` — Universal binary for both Apple Silicon & Intel Macs *(recommended)*
+   - `NetPriority-v*-macos-arm64.zip` — Apple Silicon only (`M1`–`M4`)
+   - `NetPriority-v*-macos-x86_64.zip` — Intel Mac only
 2. *(Optional)* Verify checksum:
    ```bash
-   shasum -a 256 -c NetPriority-v1.0.0-macos-arm64.zip.sha256
+   shasum -a 256 -c NetPriority-v1.0.0-macos-universal.zip.sha256
    ```
 3. Unzip and drag `NetPriority.app` into `/Applications`.
 4. **First launch note (Ad-hoc signed build)**: Because this open-source build is not signed with a paid Apple Developer ID certificate, macOS Gatekeeper may block the first launch. Clear the quarantine flag once:

@@ -71,10 +71,13 @@ macOS 决定电脑从哪张网卡上网，靠的是 **系统设置 → 网络 �
 ## 下载与安装
 
 ### 方式一：直接下载 Release 安装包（推荐）
-1. 前往 [**GitHub Releases**](https://github.com/wmwgz/net-priority/releases) 下载最新的 `NetPriority-v*-macos-*.zip`。
+1. 前往 [**GitHub Releases**](https://github.com/wmwgz/net-priority/releases) 下载对应版本的安装包：
+   - `NetPriority-v*-macos-universal.zip` — Intel + Apple Silicon 通用包 *(推荐)*
+   - `NetPriority-v*-macos-arm64.zip` — Apple Silicon（M 系列芯片）专用包
+   - `NetPriority-v*-macos-x86_64.zip` — Intel Mac 专用包
 2. *(可选)* 校验压缩包 SHA-256：
    ```bash
-   shasum -a 256 -c NetPriority-v1.0.0-macos-arm64.zip.sha256
+   shasum -a 256 -c NetPriority-v1.0.0-macos-universal.zip.sha256
    ```
 3. 解压后将 `NetPriority.app` 拖入 `/Applications`（应用程序）文件夹。
 4. **首次打开提示（未公证说明）**：由于个人开源版未购买 Apple 开发者公证签名，首次双击可能会被 macOS Gatekeeper 拦截，在终端执行一次以下命令移除隔离属性即可正常打开：
