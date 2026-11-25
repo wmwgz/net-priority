@@ -121,7 +121,7 @@ public enum Parsers {
         )
     }
 
-    public static func parseIfconfig(_ output: String, exitCode: Int32) -> (status: LinkStatus, ipv4: String, mediaSummary: String) {
+    public static func parseIfconfig(_ output: String, exitCode: Int32, lang: ResolvedLanguage = L10n.resolved) -> (status: LinkStatus, ipv4: String, mediaSummary: String) {
         if exitCode != 0 {
             return (.unplugged, "", "")
         }
@@ -148,15 +148,15 @@ public enum Parsers {
             }
         }
 
-        return (status, ipv4, formatMedia(rawMedia))
+        return (status, ipv4, formatMedia(rawMedia, lang: lang))
     }
 
-    public static func formatMedia(_ raw: String) -> String {
+    public static func formatMedia(_ raw: String, lang: ResolvedLanguage = L10n.resolved) -> String {
         let lower = raw.lowercased()
         if lower.isEmpty || lower.contains("(none)") || lower == "autoselect" {
             return ""
         }
-        let duplex = lower.contains("full-duplex") ? "全双工" : (lower.contains("half-duplex") ? "半双工" : "")
+        let duplex = lower.contains("full-duplex") ? L10n.fullDuplex(lang) : (lower.contains("half-duplex") ? L10n.halfDuplex(lang) : "")
         if lower.contains("10gbase") {
             return duplex.isEmpty ? "10G" : "10G \(duplex)"
         }

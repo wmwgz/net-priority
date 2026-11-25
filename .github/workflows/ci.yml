@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run NetPrioritySelfTest
+        run: swift run NetPrioritySelfTest
+      - name: Build release binary
+        run: swift build -c release

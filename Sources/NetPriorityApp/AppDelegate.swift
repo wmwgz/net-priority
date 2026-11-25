@@ -52,10 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "网卡优先级管理 (NetPriority)"
+        window.title = L10n.windowTitle(viewModel.lang)
         window.contentView = hosting
         window.setContentSize(NSSize(width: 780, height: 600))
-        window.minSize = NSSize(width: 700, height: 500)
+        window.minSize = NSSize(width: 720, height: 500)
         window.center()
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -71,35 +71,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupMainMenu() {
+        let l = viewModel.lang
         let mainMenu = NSMenu()
 
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "隐藏网卡优先级管理", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: L10n.mainMenuHide(l), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "退出 NetPriority", action: #selector(handleQuit), keyEquivalent: "q")
+        appMenu.addItem(withTitle: L10n.menuBarQuit(l), action: #selector(handleQuit), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
         mainMenu.addItem(appMenuItem)
 
         let editMenuItem = NSMenuItem()
-        let editMenu = NSMenu(title: "编辑")
-        editMenu.addItem(withTitle: "撤销", action: Selector(("undo:")), keyEquivalent: "z")
-        editMenu.addItem(withTitle: "重做", action: Selector(("redo:")), keyEquivalent: "Z")
+        let editMenu = NSMenu(title: L10n.mainMenuEdit(l))
+        editMenu.addItem(withTitle: L10n.mainMenuUndo(l), action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: L10n.mainMenuRedo(l), action: Selector(("redo:")), keyEquivalent: "Z")
         editMenu.addItem(.separator())
-        editMenu.addItem(withTitle: "剪切", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "拷贝", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "粘贴", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "全选", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editMenu.addItem(withTitle: L10n.mainMenuCut(l), action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: L10n.mainMenuCopy(l), action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: L10n.mainMenuPaste(l), action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: L10n.mainMenuSelectAll(l), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editMenuItem.submenu = editMenu
         mainMenu.addItem(editMenuItem)
 
         let windowMenuItem = NSMenuItem()
-        let windowMenu = NSMenu(title: "窗口")
-        windowMenu.addItem(withTitle: "打开主窗口", action: #selector(handleOpenWindow), keyEquivalent: "o")
-        windowMenu.addItem(withTitle: "刷新状态", action: #selector(handleRefresh), keyEquivalent: "r")
+        let windowMenu = NSMenu(title: L10n.mainMenuWindow(l))
+        windowMenu.addItem(withTitle: L10n.menuBarOpenWindow(l), action: #selector(handleOpenWindow), keyEquivalent: "o")
+        windowMenu.addItem(withTitle: L10n.menuBarRefresh(l), action: #selector(handleRefresh), keyEquivalent: "r")
         windowMenu.addItem(.separator())
-        windowMenu.addItem(withTitle: "关闭窗口", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
-        windowMenu.addItem(withTitle: "最小化", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: L10n.mainMenuCloseWindow(l), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenu.addItem(withTitle: L10n.mainMenuMinimize(l), action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
         windowMenuItem.submenu = windowMenu
         mainMenu.addItem(windowMenuItem)
 
@@ -126,20 +127,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func bindStatusUpdates() {
-        Publishers.CombineLatest3(viewModel.$services, viewModel.$routeInfo, viewModel.$launchAtLogin)
+        Publishers.CombineLatest4(viewModel.$services, viewModel.$routeInfo, viewModel.$launchAtLogin, viewModel.$appLanguage)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _, _, _ in
-                self?.updateStatusBar()
+            .sink { [weak self] _, _, _, _ in
+                guard let self else { return }
+                self.mainWindow.title = L10n.windowTitle(self.viewModel.lang)
+                self.setupMainMenu()
+                self.updateStatusBar()
             }
             .store(in: &cancellables)
     }
 
     private func updateStatusBar() {
         guard let button = statusItem.button else { return }
+        let l = viewModel.lang
 
         let exit = viewModel.defaultExitService
         let symbolName = exit?.kind.systemImage ?? "wifi.slash"
-        if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: "网络出口") {
+        if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: L10n.currentDefaultExit(l)) {
             img.isTemplate = true
             button.image = img
         }
@@ -149,31 +154,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let shortName = exit.kind == .wifi ? "Wi-Fi" : exit.displayName
             button.title = " \(shortName)"
         } else {
-            button.title = " 无出口"
+            button.title = " \(L10n.menuBarNoExitShort(l))"
         }
 
         let menu = NSMenu()
 
         if let exit {
-            let ipText = exit.effectiveIPv4.isEmpty ? "无 IP" : exit.effectiveIPv4
-            let header = NSMenuItem(title: "当前出口：\(exit.displayName)（\(ipText)）", action: nil, keyEquivalent: "")
+            let ipText = exit.effectiveIPv4.isEmpty ? L10n.menuBarNoIP(l) : exit.effectiveIPv4
+            let header = NSMenuItem(title: L10n.menuBarCurrentExit(exit.displayName, ip: ipText, l), action: nil, keyEquivalent: "")
             header.isEnabled = false
             menu.addItem(header)
         } else {
-            let header = NSMenuItem(title: "当前无默认上网出口", action: nil, keyEquivalent: "")
+            let header = NSMenuItem(title: L10n.menuBarNoDefaultExit(l), action: nil, keyEquivalent: "")
             header.isEnabled = false
             menu.addItem(header)
         }
 
         if !viewModel.routeInfo.ipv4Gateway.isEmpty {
-            let gw = NSMenuItem(title: "默认网关：\(viewModel.routeInfo.ipv4Gateway) (\(viewModel.routeInfo.ipv4Interface))", action: nil, keyEquivalent: "")
+            let gw = NSMenuItem(title: L10n.menuBarGateway(viewModel.routeInfo.ipv4Gateway, iface: viewModel.routeInfo.ipv4Interface, l), action: nil, keyEquivalent: "")
             gw.isEnabled = false
             menu.addItem(gw)
         }
 
         menu.addItem(.separator())
 
-        let wifiItem = NSMenuItem(title: "一键优先 Wi-Fi", action: #selector(handlePrioritizeWiFi), keyEquivalent: "1")
+        let wifiItem = NSMenuItem(title: L10n.menuBarPreferWiFi(l), action: #selector(handlePrioritizeWiFi), keyEquivalent: "1")
         wifiItem.target = self
         if let wifi = viewModel.wifiService {
             wifiItem.state = (viewModel.visibleServices.first?.id == wifi.id) ? .on : .off
@@ -184,12 +189,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let wiredList = viewModel.wiredCandidates
         if !wiredList.isEmpty {
-            let sectionTitle = NSMenuItem(title: "切换优先有线/USB 设备：", action: nil, keyEquivalent: "")
+            let sectionTitle = NSMenuItem(title: L10n.menuBarSwitchWiredHeader(l), action: nil, keyEquivalent: "")
             sectionTitle.isEnabled = false
             menu.addItem(sectionTitle)
 
             for dev in wiredList {
-                let tag = dev.config.isManagementOnly ? "仅内网" : dev.linkStatus.label
+                let tag = dev.config.isManagementOnly ? L10n.modeManagementOnly(l) : dev.linkStatus.localizedLabel(in: l)
                 let title = "  \(dev.displayName) [\(dev.device.isEmpty ? "-" : dev.device) · \(tag)]"
                 let item = NSMenuItem(title: title, action: #selector(handlePrioritizeNamed(_:)), keyEquivalent: "")
                 item.target = self
@@ -201,22 +206,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         menu.addItem(.separator())
 
-        let openItem = NSMenuItem(title: "打开主窗口...", action: #selector(handleOpenWindow), keyEquivalent: "o")
+        let openItem = NSMenuItem(title: L10n.menuBarOpenWindow(l), action: #selector(handleOpenWindow), keyEquivalent: "o")
         openItem.target = self
         menu.addItem(openItem)
 
-        let refreshItem = NSMenuItem(title: "立即刷新状态", action: #selector(handleRefresh), keyEquivalent: "r")
+        let refreshItem = NSMenuItem(title: L10n.menuBarRefresh(l), action: #selector(handleRefresh), keyEquivalent: "r")
         refreshItem.target = self
         menu.addItem(refreshItem)
 
-        let loginItem = NSMenuItem(title: "开机自启", action: #selector(handleToggleLaunchAtLogin), keyEquivalent: "")
+        let langRootItem = NSMenuItem(title: "\(L10n.languageLabel(l)) / Language", action: nil, keyEquivalent: "")
+        let langSubmenu = NSMenu()
+        for option in AppLanguage.allCases {
+            let mi = NSMenuItem(title: option.menuTitle(in: l), action: #selector(handleSelectLanguage(_:)), keyEquivalent: "")
+            mi.target = self
+            mi.representedObject = option.rawValue
+            mi.state = (viewModel.appLanguage == option) ? .on : .off
+            langSubmenu.addItem(mi)
+        }
+        langRootItem.submenu = langSubmenu
+        menu.addItem(langRootItem)
+
+        let loginItem = NSMenuItem(title: L10n.launchAtLogin(l), action: #selector(handleToggleLaunchAtLogin), keyEquivalent: "")
         loginItem.target = self
         loginItem.state = viewModel.launchAtLogin ? .on : .off
         menu.addItem(loginItem)
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "退出 NetPriority", action: #selector(handleQuit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: L10n.menuBarQuit(l), action: #selector(handleQuit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -238,6 +255,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc private func handleRefresh() {
         Task { await viewModel.refresh() }
+    }
+
+    @objc private func handleSelectLanguage(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let chosen = AppLanguage(rawValue: raw) else { return }
+        viewModel.appLanguage = chosen
     }
 
     @objc private func handleToggleLaunchAtLogin() {

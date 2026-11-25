@@ -9,14 +9,11 @@ public enum ServiceKind: String, Codable, Equatable, Hashable {
     case vpnOrVirtual
 
     public var label: String {
-        switch self {
-        case .wifi: return "无线 Wi-Fi"
-        case .wired: return "有线网卡"
-        case .usbModemOrPhone: return "USB 共享/随身设备"
-        case .bridge: return "雷雳网桥"
-        case .serialOrDebug: return "调试串口"
-        case .vpnOrVirtual: return "虚拟/VPN"
-        }
+        localizedLabel(in: L10n.resolved)
+    }
+
+    public func localizedLabel(in lang: ResolvedLanguage) -> String {
+        L10n.serviceKind(self, lang)
     }
 
     public var systemImage: String {
@@ -38,12 +35,11 @@ public enum LinkStatus: String, Codable, Equatable, Hashable {
     case disabled
 
     public var label: String {
-        switch self {
-        case .active: return "已连接"
-        case .inactive: return "未连接"
-        case .unplugged: return "未接入"
-        case .disabled: return "已禁用"
-        }
+        localizedLabel(in: L10n.resolved)
+    }
+
+    public func localizedLabel(in lang: ResolvedLanguage) -> String {
+        L10n.linkStatus(self, lang)
     }
 }
 
@@ -95,16 +91,20 @@ public struct ServiceConfigInfo: Equatable, Hashable {
     }
 
     public var modeLabel: String {
+        localizedModeLabel(in: L10n.resolved)
+    }
+
+    public func localizedModeLabel(in lang: ResolvedLanguage) -> String {
         if isManagementOnly {
-            return "仅内网管理"
+            return L10n.modeManagementOnly(lang)
         }
         if configType.localizedCaseInsensitiveContains("DHCP") {
-            return "DHCP 自动"
+            return L10n.modeDHCP(lang)
         }
         if configType.localizedCaseInsensitiveContains("Manual") {
-            return "手动 IP"
+            return L10n.modeManualIP(lang)
         }
-        return configType.isEmpty ? "默认" : configType
+        return configType.isEmpty ? L10n.modeDefault(lang) : configType
     }
 }
 
@@ -232,13 +232,14 @@ public enum NetworkManagerError: LocalizedError {
     case launchAgentFailed(String)
 
     public var errorDescription: String? {
+        let l = L10n.resolved
         switch self {
         case .commandFailed(let cmd, let detail):
-            return "执行系统网络命令失败（\(cmd)）：\(detail)"
+            return L10n.commandFailed(cmd, detail, l)
         case .invalidInput(let msg):
             return msg
         case .launchAgentFailed(let msg):
-            return "设置开机自启失败：\(msg)"
+            return L10n.launchAgentFailed(msg, l)
         }
     }
 }

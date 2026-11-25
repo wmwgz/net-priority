@@ -7,8 +7,22 @@ public final class PreferencesStore {
     private let aliasesKey = "netpriority.serviceAliases"
     private let manualConfigsKey = "netpriority.savedManualConfigs"
     private let showHiddenKey = "netpriority.showHiddenServices"
+    private let languageKey = "netpriority.language"
 
     public init() {}
+
+    public var appLanguage: AppLanguage {
+        get {
+            guard let raw = defaults.string(forKey: languageKey),
+                  let lang = AppLanguage(rawValue: raw) else {
+                return .system
+            }
+            return lang
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: languageKey)
+        }
+    }
 
     public func loadAliases() -> [String: String] {
         defaults.dictionary(forKey: aliasesKey) as? [String: String] ?? [:]
@@ -52,7 +66,7 @@ public final class PreferencesStore {
 }
 
 public enum NetworkManager {
-    public static func loadSnapshot(aliases: [String: String], includeHidden: Bool) -> NetworkSnapshot {
+    public static func loadSnapshot(aliases: [String: String], includeHidden: Bool, lang: ResolvedLanguage = L10n.resolved) -> NetworkSnapshot {
         let orderResult = CommandRunner.run("/usr/sbin/networksetup", ["-listnetworkserviceorder"])
         let rawEntries = Parsers.parseServiceOrder(orderResult.stdout)
 
@@ -93,7 +107,7 @@ public enum NetworkManager {
 
             if !entry.device.isEmpty && shouldQueryDetails {
                 let ifRes = CommandRunner.run("/sbin/ifconfig", [entry.device])
-                let parsedIf = Parsers.parseIfconfig(ifRes.stdout, exitCode: ifRes.exitCode)
+                let parsedIf = Parsers.parseIfconfig(ifRes.stdout, exitCode: ifRes.exitCode, lang: lang)
                 if entry.isEnabled {
                     linkStatus = parsedIf.status
                 } else {
@@ -143,11 +157,12 @@ public enum NetworkManager {
     }
 
     public static func setManagementOnly(_ serviceName: String, ip: String, subnetMask: String) throws {
+        let l = L10n.resolved
         guard Parsers.isValidIPv4(ip) else {
-            throw NetworkManagerError.invalidInput("IPv4 地址格式无效：\(ip)")
+            throw NetworkManagerError.invalidInput(L10n.invalidIPWithVal(ip, l))
         }
         guard Parsers.isValidIPv4(subnetMask) else {
-            throw NetworkManagerError.invalidInput("子网掩码格式无效：\(subnetMask)")
+            throw NetworkManagerError.invalidInput(L10n.invalidMaskWithVal(subnetMask, l))
         }
         try CommandRunner.runNetworkSetup(["-setmanual", serviceName, ip, subnetMask])
         try CommandRunner.runNetworkSetup(["-setv6off", serviceName])

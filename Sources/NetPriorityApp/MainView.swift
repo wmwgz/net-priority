@@ -4,6 +4,8 @@ import NetPriorityCore
 struct MainView: View {
     @ObservedObject var viewModel: AppViewModel
 
+    private var l: ResolvedLanguage { viewModel.lang }
+
     var body: some View {
         VStack(spacing: 0) {
             heroHeader
@@ -34,14 +36,14 @@ struct MainView: View {
                 .padding(.horizontal, 18)
                 .padding(.vertical, 8)
         }
-        .frame(minWidth: 700, minHeight: 500)
+        .frame(minWidth: 720, minHeight: 500)
         .sheet(item: $viewModel.editingAliasTarget) { target in
-            AliasEditorSheet(item: target) { newAlias in
+            AliasEditorSheet(item: target, lang: l) { newAlias in
                 viewModel.saveAlias(for: target, alias: newAlias)
             }
         }
         .sheet(item: $viewModel.editingManagementTarget) { target in
-            ManagementIPSheet(item: target) { ip, mask in
+            ManagementIPSheet(item: target, lang: l) { ip, mask in
                 viewModel.applyManagementOnly(target, ip: ip, mask: mask)
             }
         }
@@ -60,7 +62,7 @@ struct MainView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
-                    Text("当前默认上网出口")
+                    Text(L10n.currentDefaultExit(l))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if !viewModel.routeInfo.ipv6Interface.isEmpty {
@@ -90,7 +92,7 @@ struct MainView: View {
                             Text("IP: \(exit.effectiveIPv4)")
                         }
                         if !viewModel.routeInfo.ipv4Gateway.isEmpty {
-                            Text("网关: \(viewModel.routeInfo.ipv4Gateway)")
+                            Text(L10n.gatewayPrefix(viewModel.routeInfo.ipv4Gateway, l))
                         }
                         if !exit.mediaSummary.isEmpty {
                             Text(exit.mediaSummary)
@@ -99,7 +101,7 @@ struct MainView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 } else {
-                    Text("未检测到默认上网路由")
+                    Text(L10n.noDefaultRoute(l))
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -119,7 +121,7 @@ struct MainView: View {
         let btn = Button {
             viewModel.prioritizeWiFi()
         } label: {
-            Label("优先 Wi-Fi", systemImage: "wifi")
+            Label(L10n.prioritizeWiFi(l), systemImage: "wifi")
         }
         .controlSize(.large)
         .disabled(viewModel.isBusy || viewModel.wifiService == nil)
@@ -140,17 +142,18 @@ struct MainView: View {
                     Button {
                         viewModel.prioritizeWired(serviceName: dev.serviceName)
                     } label: {
-                        Text("\(dev.displayName)（\(dev.device.isEmpty ? "无接口" : dev.device) · \(dev.linkStatus.label)）")
+                        let devName = dev.device.isEmpty ? L10n.noDeviceInterface(l) : dev.device
+                        Text("\(dev.displayName) (\(devName) · \(dev.linkStatus.localizedLabel(in: l)))")
                     }
                 }
             } label: {
-                Label("优先有线", systemImage: "cable.connector")
+                Label(L10n.prioritizeWired(l), systemImage: "cable.connector")
             } primaryAction: {
                 viewModel.prioritizeWired()
             }
             .controlSize(.large)
             .disabled(viewModel.isBusy)
-            .help("直接点击优先有线，点击右侧箭头可选择具体有线设备")
+            .help(L10n.wiredSplitHelp(l))
 
             if viewModel.isWiredPrimary {
                 menu.buttonStyle(.borderedProminent)
@@ -161,7 +164,7 @@ struct MainView: View {
             let btn = Button {
                 viewModel.prioritizeWired()
             } label: {
-                Label("优先有线", systemImage: "cable.connector")
+                Label(L10n.prioritizeWired(l), systemImage: "cable.connector")
             }
             .controlSize(.large)
             .disabled(viewModel.isBusy || candidates.isEmpty)
@@ -180,28 +183,49 @@ struct MainView: View {
     }
 
     private var controlToolbar: some View {
-        HStack(spacing: 14) {
-            Text("拖拽网卡行或点击「设为优先」即可实时生效（第 1 位顺位最高）")
+        HStack(spacing: 12) {
+            Text(L10n.dragHint(l))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
 
             Spacer()
 
-            Toggle("显示串口/VPN (\(viewModel.hiddenCount))", isOn: $viewModel.showHiddenServices)
+            Toggle(L10n.showHiddenToggle(count: viewModel.hiddenCount, l), isOn: $viewModel.showHiddenServices)
                 .toggleStyle(.checkbox)
                 .font(.caption)
 
-            Toggle("开机自启", isOn: Binding(
+            Toggle(L10n.launchAtLogin(l), isOn: Binding(
                 get: { viewModel.launchAtLogin },
                 set: { viewModel.setLaunchAtLogin($0) }
             ))
             .toggleStyle(.checkbox)
             .font(.caption)
 
+            Menu {
+                ForEach(AppLanguage.allCases) { option in
+                    Button {
+                        viewModel.appLanguage = option
+                    } label: {
+                        if viewModel.appLanguage == option {
+                            Label(option.menuTitle(in: l), systemImage: "checkmark")
+                        } else {
+                            Text(option.menuTitle(in: l))
+                        }
+                    }
+                }
+            } label: {
+                Label(viewModel.appLanguage.menuTitle(in: l), systemImage: "globe")
+                    .font(.caption)
+            }
+            .menuStyle(.borderedButton)
+            .controlSize(.small)
+            .help(L10n.languageLabel(l))
+
             Button {
                 Task { await viewModel.refresh() }
             } label: {
-                Label("刷新", systemImage: "arrow.clockwise")
+                Label(L10n.refresh(l), systemImage: "arrow.clockwise")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -213,7 +237,7 @@ struct MainView: View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(.orange)
-            Text("当前第 1 位「\(item.displayName)」处于仅内网管理模式（无默认网关），系统会自动顺延由下方下一个可用网卡负责上网。")
+            Text(L10n.managementOrderBanner(item.displayName, l))
                 .font(.caption)
                 .foregroundStyle(.primary)
             Spacer()
@@ -230,6 +254,7 @@ struct MainView: View {
                     rank: index + 1,
                     totalVisible: viewModel.visibleServices.count,
                     item: item,
+                    lang: l,
                     isBusy: viewModel.isBusy,
                     onPromote: { viewModel.promote(item) },
                     onMoveUp: { viewModel.moveStep(item, delta: -1) },
@@ -252,7 +277,7 @@ struct MainView: View {
             if viewModel.isBusy {
                 ProgressView()
                     .controlSize(.small)
-                Text("正在应用系统网络配置...")
+                Text(L10n.applyingChanges(l))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if let err = viewModel.errorMessage {
@@ -269,7 +294,7 @@ struct MainView: View {
                     .font(.caption)
                     .foregroundStyle(.primary)
             } else {
-                Text("共 \(viewModel.visibleServices.count) 个网络设备" + (viewModel.showHiddenServices ? "" : "（已自动过滤 \(viewModel.hiddenCount) 个调试串口/VPN 项）"))
+                Text(L10n.footerCount(visible: viewModel.visibleServices.count, hidden: viewModel.hiddenCount, showingHidden: viewModel.showHiddenServices, l))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -277,7 +302,7 @@ struct MainView: View {
             Spacer()
 
             if let updated = viewModel.lastUpdated {
-                Text("更新于 \(updated.formatted(date: .omitted, time: .standard))")
+                Text(L10n.updatedAt(updated.formatted(date: .omitted, time: .standard), l))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -289,6 +314,7 @@ private struct ServiceRowView: View {
     let rank: Int
     let totalVisible: Int
     let item: NetworkServiceItem
+    let lang: ResolvedLanguage
     let isBusy: Bool
     let onPromote: () -> Void
     let onMoveUp: () -> Void
@@ -312,7 +338,7 @@ private struct ServiceRowView: View {
             Circle()
                 .fill(statusDotColor)
                 .frame(width: 9, height: 9)
-                .help(statusHelp)
+                .help(L10n.statusDotHelp(isEnabled: item.isEnabled, isDefault: item.isDefaultIPv4Route, link: item.linkStatus, lang))
 
             Image(systemName: item.kind.systemImage)
                 .font(.system(size: 16, weight: .medium))
@@ -340,27 +366,27 @@ private struct ServiceRowView: View {
                     }
 
                     if item.isDefaultIPv4Route {
-                        badge("默认出口", color: .green)
+                        badge(L10n.defaultExitBadge(lang), color: .green)
                     }
 
                     if item.config.isManagementOnly {
-                        badge("仅内网管理", color: .orange)
+                        badge(L10n.modeManagementOnly(lang), color: .orange)
                     }
 
                     if !item.isEnabled {
-                        badge("已禁用", color: .red)
+                        badge(L10n.disabledBadge(lang), color: .red)
                     }
                 }
 
                 HStack(spacing: 10) {
-                    Text(item.linkStatus.label)
+                    Text(item.linkStatus.localizedLabel(in: lang))
                     if !item.effectiveIPv4.isEmpty {
                         Text("IP: \(item.effectiveIPv4)")
                     }
                     if !item.config.router.isEmpty {
-                        Text("网关: \(item.config.router)")
+                        Text(L10n.gatewayPrefix(item.config.router, lang))
                     } else if item.config.isManagementOnly {
-                        Text("无默认网关 · IPv6 \(item.config.ipv6Mode.isEmpty ? "Off" : item.config.ipv6Mode)")
+                        Text(L10n.noGatewayIPv6(item.config.ipv6Mode, lang))
                     }
                     if !item.mediaSummary.isEmpty {
                         Text(item.mediaSummary)
@@ -375,31 +401,31 @@ private struct ServiceRowView: View {
 
             HStack(spacing: 6) {
                 if item.supportsManagementOnly && item.isEnabled {
-                    Button(item.config.isManagementOnly ? "允许上网" : "仅内网") {
+                    Button(item.config.isManagementOnly ? L10n.allowInternetBtn(lang) : L10n.managementOnlyBtn(lang)) {
                         onToggleManagement()
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .tint(item.config.isManagementOnly ? .orange : nil)
                     .help(item.config.isManagementOnly
-                          ? "恢复 DHCP 自动获取网关，允许电脑通过该设备上网"
-                          : "设为手动 IP 且不配网关、关闭 IPv6，仅用于访问设备管理后台（不抢默认网）")
+                          ? L10n.allowInternetHelp(lang)
+                          : L10n.managementOnlyHelp(lang))
                     .contextMenu {
-                        Button("自定义手动内网 IP...") {
+                        Button(L10n.customManualIPMenu(lang)) {
                             onEditManagementIP()
                         }
                     }
                 }
 
                 if rank == 1 {
-                    Text("最高优先")
+                    Text(L10n.highestPriorityBadge(lang))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                 } else {
-                    Button("设为优先") {
+                    Button(L10n.setPriorityBtn(lang)) {
                         onPromote()
                     }
                     .buttonStyle(.bordered)
@@ -414,7 +440,7 @@ private struct ServiceRowView: View {
                     }
                     .buttonStyle(.borderless)
                     .disabled(rank <= 1 || isBusy)
-                    .help("上移一位")
+                    .help(L10n.moveUpHelp(lang))
 
                     Button {
                         onMoveDown()
@@ -423,7 +449,7 @@ private struct ServiceRowView: View {
                     }
                     .buttonStyle(.borderless)
                     .disabled(rank >= totalVisible || isBusy)
-                    .help("下移一位")
+                    .help(L10n.moveDownHelp(lang))
                 }
 
                 Button {
@@ -432,7 +458,7 @@ private struct ServiceRowView: View {
                     Image(systemName: "pencil")
                 }
                 .buttonStyle(.borderless)
-                .help("设置中文备注名")
+                .help(L10n.editAliasHelp(lang))
 
                 Toggle("", isOn: Binding(
                     get: { item.isEnabled },
@@ -441,7 +467,7 @@ private struct ServiceRowView: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .help(item.isEnabled ? "点击禁用此网卡" : "点击启用此网卡")
+                .help(L10n.toggleEnableHelp(isEnabled: item.isEnabled, lang))
             }
             .disabled(isBusy)
         }
@@ -462,12 +488,5 @@ private struct ServiceRowView: View {
         if item.isDefaultIPv4Route { return .green }
         if item.linkStatus == .active { return .blue }
         return .gray.opacity(0.5)
-    }
-
-    private var statusHelp: String {
-        if !item.isEnabled { return "网卡已禁用" }
-        if item.isDefaultIPv4Route { return "当前默认上网出口" }
-        if item.linkStatus == .active { return "物理链路已连接" }
-        return "未连接或未插线"
     }
 }

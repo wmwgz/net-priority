@@ -114,10 +114,16 @@ func testParseIfconfigAndRoute() {
     \tmedia: autoselect (1000baseT <full-duplex>)
     \tstatus: active
     """
-    let parsed = Parsers.parseIfconfig(ifOut, exitCode: 0)
-    checkEqual(parsed.status, .active)
-    checkEqual(parsed.ipv4, "192.168.5.146")
-    checkEqual(parsed.mediaSummary, "1000M 全双工")
+    let parsedZh = Parsers.parseIfconfig(ifOut, exitCode: 0, lang: .zhHans)
+    checkEqual(parsedZh.status, .active)
+    checkEqual(parsedZh.ipv4, "192.168.5.146")
+    checkEqual(parsedZh.mediaSummary, "1000M 全双工")
+
+    let parsedEn = Parsers.parseIfconfig(ifOut, exitCode: 0, lang: .en)
+    checkEqual(parsedEn.mediaSummary, "1000M Full-Duplex")
+
+    let parsedJa = Parsers.parseIfconfig(ifOut, exitCode: 0, lang: .ja)
+    checkEqual(parsedJa.mediaSummary, "1000M 全二重")
 
     let unplugged = Parsers.parseIfconfig("", exitCode: 1)
     checkEqual(unplugged.status, .unplugged)
@@ -204,6 +210,23 @@ func testManagementOnlySupportForWiFiAndOthers() {
     checkTrue(!makeItem(kind: .vpnOrVirtual, name: "Tailscale", dev: "").supportsManagementOnly, "vpn !supportsManagementOnly")
 }
 
+func testLocalizationResolutionAndStrings() {
+    checkEqual(AppLanguage.system.resolve(preferredLanguages: ["zh-Hans-CN", "en"]), .zhHans)
+    checkEqual(AppLanguage.system.resolve(preferredLanguages: ["zh-Hant-TW"]), .zhHans)
+    checkEqual(AppLanguage.system.resolve(preferredLanguages: ["en-US"]), .en)
+    checkEqual(AppLanguage.system.resolve(preferredLanguages: ["ja-JP"]), .ja)
+    checkEqual(AppLanguage.system.resolve(preferredLanguages: ["fr-FR"]), .en)
+    checkEqual(AppLanguage.zhHans.resolve(preferredLanguages: ["en-US"]), .zhHans)
+    checkEqual(AppLanguage.en.resolve(preferredLanguages: ["zh-Hans-CN"]), .en)
+    checkEqual(AppLanguage.ja.resolve(preferredLanguages: ["zh-Hans-CN"]), .ja)
+
+    checkEqual(L10n.prioritizeWiFi(.zhHans), "优先 Wi-Fi")
+    checkEqual(L10n.prioritizeWiFi(.en), "Prefer Wi-Fi")
+    checkEqual(L10n.prioritizeWiFi(.ja), "Wi-Fi 優先")
+    checkEqual(L10n.managementOnlyBtn(.en), "Intranet Only")
+    checkEqual(L10n.allowInternetBtn(.ja), "ネット許可")
+}
+
 testParseRealServiceOrder()
 testClassificationAndFiltering()
 testParseServiceInfoVariants()
@@ -211,6 +234,7 @@ testParseIfconfigAndRoute()
 testOrderMergingPreservesHiddenServices()
 testIPv4Validation()
 testManagementOnlySupportForWiFiAndOthers()
+testLocalizationResolutionAndStrings()
 
 if failureCount > 0 {
     fputs("Tests failed: \(failureCount) of \(assertionCount) assertions failed.\n", stderr)

@@ -1,21 +1,51 @@
-# NetPriority（网卡优先级管理）
+# NetPriority
 
-原生轻量 macOS（SwiftUI + AppKit）工具，用于一键切换 Wi-Fi 与多款有线网卡的上网优先级，管理有线设备的「仅内网管理 / 允许上网（DHCP）」模式，并支持实时菜单栏状态显示。
+English | [简体中文](README_CN.md)
 
-## 功能特性
+A lightweight native macOS SwiftUI + AppKit utility to inspect and switch network interface priority (Wi-Fi vs. specific wired / USB Ethernet / mobile tethering devices), configure **Intranet-Only (no default gateway)** adapters, and monitor the active internet exit live from the menu bar.
 
-- **主窗口 + 顶部菜单栏图标**：菜单栏实时显示当前默认上网出口与 IP，关闭主窗口后自动驻留菜单栏，随时点开切换。
-- **一键切换优先级**：支持一键 `优先 Wi-Fi`、`优先有线`（或指定任意有线网卡设为最高优先级）。
-- **拖拽 / 按钮完整排序**：自由调整所有网络服务顺位，自动保留隐藏系统服务顺位不丢失。
-- **单网卡快速管理**：
-  - 一键切换有线设备为「**仅内网管理**」（手动 IP + 无路由器网关 + 关闭 IPv6，适合随身 WiFi 等管理口不抢默认网）或「**允许上网**」（恢复 DHCP + IPv6 自动）。
-  - 一键启用 / 禁用单个网络服务。
-- **过滤与中文别名**：默认过滤 `J-Link`、`USB JTAG`、串口与空设备 VPN 扩展项（可随时展开显示），支持自定义设备中文备注。
-- **实时监听与开机自启**：通过 `SCDynamicStore` 监听热插拔与 IP/路由变化，支持一键配置 `LaunchAgent` 开机自启。
+## Why NetPriority?
 
-## 构建与安装
+- **Multiple wired/USB adapters**: Distinguish between dock Gigabit Ethernet, portable USB Wi-Fi dongles, phone USB tethering, and Thunderbolt Bridge—promote any exact adapter to `#1` instead of a blind Wi-Fi/Ethernet toggle.
+- **One-click "Intranet Only" mode**: Connect to an admin interface (e.g. a portable Wi-Fi router at `192.168.0.1` or an embedded AP over Wi-Fi) with a manual IP, **no router gateway**, and **IPv6 off**, so you can reach its local web UI without hijacking your default internet connection.
+- **No noisy debug ports**: Automatically hides `J-Link`, `USB JTAG` serial modems, and virtual VPN extensions unless you toggle them visible—while always preserving their service order under the hood when reordering.
+- **Live Menu Bar & Window**: Shows your current active exit, IPv4, gateway, link speed, and updates immediately on hotplug or route changes via `SCDynamicStore`.
+- **Multi-Language UI**: Supports **Follow System**, **English**, **简体中文**, and **日本語** with instant live switching (no restart required).
+
+## Features
+
+- Main window + persistent menu bar status item (`--background` supported for Launch at Login)
+- One-click **Prefer Wi-Fi** / **Prefer Wired** (with split menu to pick a specific wired adapter)
+- Drag-and-drop and step buttons (`↑` / `↓`) for full priority ordering
+- Per-adapter **Enable / Disable** toggle
+- Per-adapter **Intranet Only / Allow Internet (DHCP)** toggle (available on both wired and Wi-Fi adapters; right-click to customize manual IP/mask)
+- Custom aliases stored locally (e.g. rename `200806006809080000` to `Pocket WiFi`)
+- Single-instance launch protection & native macOS keyboard shortcuts
+
+## Requirements
+
+- macOS 14.0 (Sonoma) or later
+- Swift 5.9+ (Xcode or Apple Command Line Tools)
+
+## Build & Install
 
 ```bash
+git clone https://github.com/<your-username>/net-priority.git
+cd net-priority
 swift run NetPrioritySelfTest
 ./scripts/build_app.sh
 ```
+
+`build_app.sh` builds a release binary, generates the `.icns` icon, ad-hoc signs `NetPriority.app`, and installs it to `/Applications/NetPriority.app` (or `~/Applications/NetPriority.app` if `/Applications` is not writable).
+
+### First Launch Note (Unsigned / Ad-hoc Signed Build)
+
+If you download a prebuilt release binary without Apple Developer notarization and macOS Gatekeeper blocks it, clear the quarantine attribute once:
+
+```bash
+xattr -cr /Applications/NetPriority.app
+```
+
+## License
+
+[MIT](LICENSE)

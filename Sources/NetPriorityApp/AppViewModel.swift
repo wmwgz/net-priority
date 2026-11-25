@@ -12,6 +12,13 @@ final class AppViewModel: ObservableObject {
             Task { await refresh() }
         }
     }
+    @Published var appLanguage: AppLanguage {
+        didSet {
+            PreferencesStore.shared.appLanguage = appLanguage
+            L10n.appLanguage = appLanguage
+            Task { await refresh() }
+        }
+    }
     @Published var launchAtLogin: Bool = LaunchAtLoginManager.isEnabled()
     @Published var isBusy: Bool = false
     @Published var statusMessage: String?
@@ -25,7 +32,11 @@ final class AppViewModel: ObservableObject {
     private var clearToastTask: Task<Void, Never>?
 
     init() {
+        let savedLang = PreferencesStore.shared.appLanguage
+        self.appLanguage = savedLang
+        L10n.appLanguage = savedLang
         self.showHiddenServices = PreferencesStore.shared.showHiddenServices
+
         let w = NetworkWatcher { [weak self] in
             Task { @MainActor in
                 await self?.refresh()
@@ -34,6 +45,10 @@ final class AppViewModel: ObservableObject {
         self.watcher = w
         w.start()
         Task { await refresh() }
+    }
+
+    var lang: ResolvedLanguage {
+        appLanguage.resolve()
     }
 
     var visibleServices: [NetworkServiceItem] {
@@ -91,8 +106,9 @@ final class AppViewModel: ObservableObject {
     func refresh() async {
         let aliases = PreferencesStore.shared.loadAliases()
         let includeHidden = showHiddenServices
+        let resolvedLang = lang
         let snapshot = await Task.detached(priority: .userInitiated) {
-            NetworkManager.loadSnapshot(aliases: aliases, includeHidden: includeHidden)
+            NetworkManager.loadSnapshot(aliases: aliases, includeHidden: includeHidden, lang: resolvedLang)
         }.value
         self.services = snapshot.services
         self.routeInfo = snapshot.routeInfo
@@ -102,7 +118,7 @@ final class AppViewModel: ObservableObject {
 
     func prioritizeWiFi() {
         guard let wifi = wifiService else {
-            showError("未找到 Wi-Fi 网络服务")
+            showError(L10n.wifiNotFoundErr(lang))
             return
         }
         promote(wifi)
@@ -116,7 +132,7 @@ final class AppViewModel: ObservableObject {
             target = primaryWiredTarget
         }
         guard let target else {
-            showError("未找到可用的有线/USB 网卡设备")
+            showError(L10n.wiredNotFoundErr(lang))
             return
         }
         promote(target)
@@ -124,7 +140,7 @@ final class AppViewModel: ObservableObject {
 
     func promote(_ item: NetworkServiceItem) {
         let allNames = services.map { $0.serviceName }
-        runMutation(successMessage: "已将「\(item.displayName)」设为最高优先级") {
+        runMutation(successMessage: L10n.promotedSuccess(item.displayName, lang)) {
             if !item.isEnabled {
                 try NetworkManager.setEnabled(item.serviceName, enabled: true)
             }
@@ -139,7 +155,7 @@ final class AppViewModel: ObservableObject {
             allServices: services.map { $0.serviceName },
             reorderedVisible: reordered.map { $0.serviceName }
         )
-        runMutation(successMessage: "已更新网卡优先级顺序") {
+        runMutation(successMessage: L10n.orderUpdatedSuccess(lang)) {
             try NetworkManager.setOrder(mergedOrder)
         }
     }
@@ -156,21 +172,21 @@ final class AppViewModel: ObservableObject {
             allServices: services.map { $0.serviceName },
             reorderedVisible: reordered.map { $0.serviceName }
         )
-        runMutation(successMessage: "已调整「\(item.displayName)」顺位") {
+        runMutation(successMessage: L10n.movedStepSuccess(item.displayName, lang)) {
             try NetworkManager.setOrder(mergedOrder)
         }
     }
 
     func toggleEnabled(_ item: NetworkServiceItem) {
         let nextEnabled = !item.isEnabled
-        runMutation(successMessage: "已\(nextEnabled ? "启用" : "禁用")「\(item.displayName)」") {
+        runMutation(successMessage: L10n.toggledEnabledSuccess(item.displayName, enabled: nextEnabled, lang)) {
             try NetworkManager.setEnabled(item.serviceName, enabled: nextEnabled)
         }
     }
 
     func toggleManagementOnly(_ item: NetworkServiceItem) {
         if item.config.isManagementOnly {
-            runMutation(successMessage: "已将「\(item.displayName)」恢复为 DHCP 允许上网") {
+            runMutation(successMessage: L10n.dhcpRestoredSuccess(item.displayName, lang)) {
                 try NetworkManager.setDHCPInternet(item.serviceName)
             }
             return
@@ -194,16 +210,17 @@ final class AppViewModel: ObservableObject {
 
     func applyManagementOnly(_ item: NetworkServiceItem, ip: String, mask: String) {
         PreferencesStore.shared.saveManualConfig(SavedManualConfig(ip: ip, subnetMask: mask), for: item.serviceName)
-        runMutation(successMessage: "「\(item.displayName)」已切换为仅内网管理（\(ip)，无网关）") {
+        runMutation(successMessage: L10n.mgmtEnabledSuccess(item.displayName, ip: ip, lang)) {
             try NetworkManager.setManagementOnly(item.serviceName, ip: ip, subnetMask: mask)
         }
     }
 
     func saveAlias(for item: NetworkServiceItem, alias: String) {
         PreferencesStore.shared.saveAlias(alias, for: item.serviceName)
-        showStatus(alias.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                   ? "已清除「\(item.serviceName)」的备注"
-                   : "已将「\(item.serviceName)」备注为「\(alias)」")
+        let trimmed = alias.trimmingCharacters(in: .whitespacesAndNewlines)
+        showStatus(trimmed.isEmpty
+                   ? L10n.aliasClearedSuccess(item.serviceName, lang)
+                   : L10n.aliasSavedSuccess(item.serviceName, alias: trimmed, lang))
         Task { await refresh() }
     }
 
@@ -211,7 +228,7 @@ final class AppViewModel: ObservableObject {
         do {
             try LaunchAtLoginManager.setEnabled(enabled)
             self.launchAtLogin = LaunchAtLoginManager.isEnabled()
-            showStatus(enabled ? "已开启登录时静默启动到菜单栏" : "已关闭开机自启")
+            showStatus(L10n.launchAtLoginSuccess(enabled, lang))
         } catch {
             self.launchAtLogin = LaunchAtLoginManager.isEnabled()
             showError(error.localizedDescription)

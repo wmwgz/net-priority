@@ -3,34 +3,36 @@ import NetPriorityCore
 
 struct AliasEditorSheet: View {
     let item: NetworkServiceItem
+    let lang: ResolvedLanguage
     let onSave: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var text: String
 
-    init(item: NetworkServiceItem, onSave: @escaping (String) -> Void) {
+    init(item: NetworkServiceItem, lang: ResolvedLanguage, onSave: @escaping (String) -> Void) {
         self.item = item
+        self.lang = lang
         self.onSave = onSave
         _text = State(initialValue: item.alias ?? "")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("设置设备备注名")
+            Text(L10n.aliasSheetTitle(lang))
                 .font(.headline)
 
-            Text("原系统名称：\(item.serviceName)" + (item.device.isEmpty ? "" : "（\(item.device)）"))
+            Text(L10n.originalSystemName(item.serviceName, device: item.device, lang))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            TextField("例如：随身WiFi、扩展坞网口、手机USB", text: $text)
+            TextField(L10n.aliasPlaceholder(lang), text: $text)
                 .textFieldStyle(.roundedBorder)
 
             HStack(spacing: 6) {
-                Text("常用建议：")
+                Text(L10n.aliasPresetsTitle(lang))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                ForEach(["随身WiFi", "扩展坞有线", "手机USB", "公司内网"], id: \.self) { preset in
+                ForEach(L10n.aliasPresets(lang), id: \.self) { preset in
                     Button(preset) {
                         text = preset
                     }
@@ -40,7 +42,7 @@ struct AliasEditorSheet: View {
             }
 
             HStack {
-                Button("清除备注") {
+                Button(L10n.clearAliasBtn(lang)) {
                     onSave("")
                     dismiss()
                 }
@@ -48,12 +50,12 @@ struct AliasEditorSheet: View {
 
                 Spacer()
 
-                Button("取消") {
+                Button(L10n.cancelBtn(lang)) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button("保存") {
+                Button(L10n.saveBtn(lang)) {
                     onSave(text)
                     dismiss()
                 }
@@ -62,12 +64,13 @@ struct AliasEditorSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 400)
+        .frame(width: 420)
     }
 }
 
 struct ManagementIPSheet: View {
     let item: NetworkServiceItem
+    let lang: ResolvedLanguage
     let onConfirm: (String, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -75,8 +78,9 @@ struct ManagementIPSheet: View {
     @State private var mask: String
     @State private var validationError: String?
 
-    init(item: NetworkServiceItem, onConfirm: @escaping (String, String) -> Void) {
+    init(item: NetworkServiceItem, lang: ResolvedLanguage, onConfirm: @escaping (String, String) -> Void) {
         self.item = item
+        self.lang = lang
         self.onConfirm = onConfirm
         let defaultIP = Parsers.isValidIPv4(item.effectiveIPv4) ? item.effectiveIPv4 : "192.168.0.100"
         let defaultMask = Parsers.isValidIPv4(item.config.subnetMask) ? item.config.subnetMask : "255.255.255.0"
@@ -86,23 +90,23 @@ struct ManagementIPSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("配置「仅内网管理」静态 IP")
+            Text(L10n.mgmtSheetTitle(lang))
                 .font(.headline)
 
-            Text("将为「\(item.displayName)」设置手动 IP，不配置路由器网关并关闭 IPv6，确保仅用于访问内网设备（如 192.168.0.1），不会抢占默认上网路线。")
+            Text(L10n.mgmtSheetDesc(item.displayName, lang))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
-                    Text("IPv4 地址")
-                        .frame(width: 72, alignment: .trailing)
+                    Text(L10n.ipv4AddressLabel(lang))
+                        .frame(width: 104, alignment: .trailing)
                     TextField("192.168.0.100", text: $ip)
                         .textFieldStyle(.roundedBorder)
                 }
                 GridRow {
-                    Text("子网掩码")
-                        .frame(width: 72, alignment: .trailing)
+                    Text(L10n.subnetMaskLabel(lang))
+                        .frame(width: 104, alignment: .trailing)
                     TextField("255.255.255.0", text: $mask)
                         .textFieldStyle(.roundedBorder)
                 }
@@ -116,20 +120,20 @@ struct ManagementIPSheet: View {
 
             HStack {
                 Spacer()
-                Button("取消") {
+                Button(L10n.cancelBtn(lang)) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button("应用") {
+                Button(L10n.applyBtn(lang)) {
                     let cleanIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
                     let cleanMask = mask.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard Parsers.isValidIPv4(cleanIP) else {
-                        validationError = "请输入合法的 IPv4 地址"
+                        validationError = L10n.invalidIPv4Error(lang)
                         return
                     }
                     guard Parsers.isValidIPv4(cleanMask) else {
-                        validationError = "请输入合法的子网掩码"
+                        validationError = L10n.invalidMaskError(lang)
                         return
                     }
                     onConfirm(cleanIP, cleanMask)
@@ -140,6 +144,6 @@ struct ManagementIPSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 420)
+        .frame(width: 450)
     }
 }
