@@ -64,6 +64,10 @@ Ideal when you want to keep your main internet on one interface while accessing 
 - Enabling **`Launch at Login`** writes a lightweight `LaunchAgent` (`~/Library/LaunchAgents/io.github.wmwgz.netpriority.plist`) with `--background` so it starts silently in the menu bar on reboot.
 - Built-in **single-instance protection** ensures reopening `NetPriority.app` brings the existing window forward instead of spawning duplicate processes.
 
+<p align="center">
+  <img src="docs/screenshots/menubar-zh.png" width="360" alt="NetPriority macOS menu bar quick priority switcher" />
+</p>
+
 ### 6. Multi-Language Switching
 - Supports **Follow System**, **English**, **简体中文**, and **日本語**.
 - Switch live from the **🌐 Language** picker in the toolbar or the **`Language`** submenu in the Menu Bar—no app restart required.

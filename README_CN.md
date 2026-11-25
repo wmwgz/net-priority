@@ -63,6 +63,10 @@ macOS 决定电脑从哪张网卡上网，靠的是 **系统设置 → 网络 �
 - 勾选 **`开机自启`** 会生成 `~/Library/LaunchAgents/io.github.wmwgz.netpriority.plist`（附带 `--background` 参数，开机后静默驻留菜单栏不弹窗打扰）。
 - 内置**单实例防多开保护**：重复双击应用会自动唤醒现有窗口，不会启动多个副本。
 
+<p align="center">
+  <img src="docs/screenshots/menubar-zh.png" width="360" alt="NetPriority macOS 菜单栏快速切换有线与 Wi-Fi 优先级" />
+</p>
+
 ### 6. 多语言实时切换
 - 支持 **跟随系统 / 简体中文 / English / 日本語**。
 - 可在主窗口工具栏 **🌐 语言下拉** 或顶部菜单栏 **`语言 / Language`** 中随时切换，界面立即全局更新，无需重启。
